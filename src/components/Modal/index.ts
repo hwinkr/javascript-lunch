@@ -3,6 +3,14 @@ import { MENU_APP_EVENTS } from "../../constants/event";
 
 import { $ } from "../../utils/dom";
 import { MenuAppEvent } from "../../types/event";
+import { isArrayElement } from "../../utils/types";
+
+const idToModalEventConvertor = {
+  "add-form": MENU_APP_EVENTS.openAddForm,
+  "restaurant-detail": MENU_APP_EVENTS.openRestaurantDetail,
+} as const;
+
+type ModalId = keyof typeof idToModalEventConvertor;
 
 class Modal extends BaseComponent {
   private modalId: string | null = null;
@@ -37,23 +45,17 @@ class Modal extends BaseComponent {
     this.innerHTML = this.getModalTemplate();
   }
 
-  isModalOpenEvent(type: string): type is MenuAppEvent {
-    return ["open-add-form", "open-restaurant-detail"].includes(type);
-  }
-
   setEvent() {
-    $<HTMLDivElement>(`#${this.modalId}-backdrop`)!.addEventListener(
-      "click",
-      (event) => {
-        if (event.target === event.currentTarget) {
-          this.hideModal();
-        }
+    $<HTMLDivElement>(`#${this.modalId}-backdrop`)!.addEventListener("click", (event) => {
+      if (event.target === event.currentTarget) {
+        this.hideModal();
       }
-    );
+    });
 
-    const openType = this.getAttribute("open-type") ?? "";
-    this.isModalOpenEvent(openType) &&
-      document.addEventListener(openType, () => {
+    const modalId = this.getAttribute("id") ?? "";
+
+    isArrayElement<ModalId>(Object.keys(idToModalEventConvertor), modalId) &&
+      document.addEventListener(idToModalEventConvertor[modalId], () => {
         this.showModal();
       });
 
